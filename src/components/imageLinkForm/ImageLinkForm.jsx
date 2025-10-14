@@ -1,3 +1,5 @@
+import "./ImageLinkForm.css";
+
 const ImageLinkForm = ({ onInputChange, onButtonSubmit }) => {
   return (
     <div>
@@ -5,14 +7,13 @@ const ImageLinkForm = ({ onInputChange, onButtonSubmit }) => {
         {"This Magic Robot will detect faces in your pictures. Give it a try."}
       </p>
       <div className="center">
-        <div className="form center pa4 br3 shadow-5">
-          <input
-            className="f4 pa2 w-70 center mr2"
-            type="text"
-            onChange={onInputChange}
-          />
+        <div
+          className="form pa4 br3 shadow-5"
+          style={{ display: "flex", gap: "0.5rem" }}
+        >
+          <input className="f4 pa2 w-70" type="text" onChange={onInputChange} />
           <button
-            className="w-30 grow f4 link ph3 pv2 dib white bg-light-purple mt2"
+            className="w-30 grow f4 link ph3 pv2 dib white bg-light-purple"
             onClick={onButtonSubmit}
           >
             Detect

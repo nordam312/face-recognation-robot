@@ -1,13 +1,10 @@
 import Tilt from "react-parallax-tilt";
+import "./Logo.css";
 
 const Logo = () => {
   return (
-    <div className="ma4 mt0 " style={{ width: 150, height: 150 }}>
-      <Tilt
-        className="br2"
-        glareMaxOpacity={0.45}
-        scale={1.05}
-      >
+    <div className="ma4 mt0 flex justify-center">
+      <Tilt className="br2" glareMaxOpacity={0.45} scale={1.05}>
         <div
           style={{
             height: 150,
@@ -25,7 +22,6 @@ const Logo = () => {
             src="public/logo.png"
           />
         </div>
-      
       </Tilt>
     </div>
   );
