@@ -3,110 +3,57 @@ import Navigation from "./components/navigation/Navigation";
 import Logo from "./components/logo/Logo";
 import ImageLinkForm from "./components/imageLinkForm/ImageLinkForm";
 import Rank from "./components/rank/Rank.jsx";
-import Particles, { initParticlesEngine } from "@tsparticles/react";
-import { loadSlim } from "@tsparticles/slim"; // if you are going to use `loadSlim`, install the "@tsparticles/slim" package too.
-import { useEffect, useState } from "react";
-
-const ParticlesOptions = {
-  fpsLimit: 120,
-  interactivity: {
-    events: {
-      onClick: {
-        enable: true,
-        mode: "push",
-      },
-      onHover: {
-        enable: true,
-        mode: "repulse",
-      },
-      resize: true,
-    },
-    modes: {
-      push: {
-        quantity: 4,
-      },
-      repulse: {
-        distance: 200,
-        duration: 0.4,
-      },
-    },
-  },
-  particles: {
-    color: {
-      value: "#ffffff",
-    },
-    links: {
-      color: "#ffffff",
-      distance: 150,
-      enable: true,
-      opacity: 0.5,
-      width: 1,
-    },
-    move: {
-      direction: "none",
-      enable: true,
-      outModes: {
-        default: "bounce",
-      },
-      random: false,
-      speed: 3,
-      straight: false,
-    },
-    number: {
-      density: {
-        enable: true,
-        area: 800,
-      },
-      value: 100,
-    },
-    opacity: {
-      value: 0.5,
-    },
-    shape: {
-      type: "circle",
-    },
-    size: {
-      value: { min: 1, max: 6 },
-    },
-  },
-  detectRetina: true,
-};
+import MemoParticles from "./MemoParticles.jsx";
+import FaceRecognition from "./components/faceRecognition/FaceRecognition.jsx";
+import { useState } from "react";
 
 function App() {
-  const [init, setInit] = useState(false);
+  const [input, setInput] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [boxes, setBoxes] = useState([]);
 
-  useEffect(() => {
-    initParticlesEngine(async (engine) => {
-      // you can initiate the tsParticles instance (engine) here, adding custom shapes or presets
-      // this loads the tsparticles package bundle, it's the easiest method for getting everything ready
-      // starting from v2 you can add only the features you need reducing the bundle size
-      //await loadAll(engine);
-      //await loadFull(engine);
-      await loadSlim(engine);
-      //await loadBasic(engine);
-    }).then(() => {
-      setInit(true);
+  const onInputChange = (event) => {
+    setInput(event.target.value);
+  };
+
+  const calculateFaceLocations = (regions) => {
+    if (!regions || regions.length === 0) return [];
+    return regions.map((region) => {
+      const boundingBox = region.region_info.bounding_box;
+      return {
+        topRow: boundingBox.top_row,
+        leftCol: boundingBox.left_col,
+        bottomRow: boundingBox.bottom_row,
+        rightCol: boundingBox.right_col,
+      };
     });
-  }, []);
+  };
 
-  const particlesLoaded = (container) => {
-    console.log(container);
+  const onButtonSubmit = () => {
+    setImageUrl(input);
+    fetch("http://localhost:5000/face-detect", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ imageUrl: input }),
+    })
+      .then((response) => response.json())
+      .then((regions) => {
+        const faceBoxes = calculateFaceLocations(regions);
+        setBoxes(faceBoxes);
+      })
+      .catch((error) => console.log("error", error));
   };
   return (
     <>
-      {init && (
-        <Particles
-          className="particles"
-          id="tsparticles"
-          particlesLoaded={particlesLoaded}
-          options={ParticlesOptions}
-        />
-      )}
+      <MemoParticles />
       <Navigation />
       <Logo />
       <Rank />
-      <ImageLinkForm />
-      {/* <FaceRecognition/> */}
+      <ImageLinkForm
+        onInputChange={onInputChange}
+        onButtonSubmit={onButtonSubmit}
+      />
+      <FaceRecognition imageUrl={imageUrl} boxes={boxes} />
     </>
   );
 }

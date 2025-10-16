@@ -1,0 +1,17 @@
+.bounding-box {
+  position: absolute;
+  border: 2px solid #00ff00;
+  box-shadow: 0 0 0 2px #00ff00 inset;
+  pointer-events: none;
+}
+
+.face-container {
+  display: inline-block;
+  position: relative;
+}
+
+.face-center {
+  text-align: center;
+  margin-top: 40px;
+  margin-bottom: 40px;
+}
