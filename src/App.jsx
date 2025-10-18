@@ -5,12 +5,50 @@ import ImageLinkForm from "./components/imageLinkForm/ImageLinkForm";
 import Rank from "./components/rank/Rank.jsx";
 import MemoParticles from "./MemoParticles.jsx";
 import FaceRecognition from "./components/faceRecognition/FaceRecognition.jsx";
-import { useState } from "react";
+import Signin from "./components/signin/signin.jsx";
+import Register from "./components/register/register.jsx";
+import { useState, useEffect } from "react";
+
+const initialUser = {
+  id: "",
+  name: "",
+  email: "",
+  entries: 0,
+  joined: "",
+};
 
 function App() {
   const [input, setInput] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [boxes, setBoxes] = useState([]);
+  const [route, setRoute] = useState("home"); // start on signin by default
+  const [user, setUser] = useState({ ...initialUser });
+
+  // load user from localStorage on mount (if present) and go to home
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("frb_current_user");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.id) {
+          setUser(parsed);
+          setRoute("home");
+        }
+      }
+    } catch (err) {
+      console.error("failed to read current user", err);
+    }
+  }, []);
+
+  // set user in state and persist current user
+  const loadUser = (userData) => {
+    setUser({ ...userData });
+    try {
+      localStorage.setItem("frb_current_user", JSON.stringify(userData));
+    } catch (err) {
+      console.error("failed to save current user", err);
+    }
+  };
 
   const onInputChange = (event) => {
     setInput(event.target.value);
@@ -43,17 +81,41 @@ function App() {
       })
       .catch((error) => console.log("error", error));
   };
+
+  // handle routing and signout: clear user on signout
+  const onRouteChange = (newRoute) => {
+    if (newRoute === "signout") {
+      setUser({ ...initialUser });
+      try {
+        localStorage.removeItem("frb_current_user");
+      } catch (err) {
+        console.error("failed to remove current user", err);
+      }
+      setRoute("home");
+      return;
+    }
+    setRoute(newRoute);
+  };
+
   return (
     <>
       <MemoParticles />
-      <Navigation />
-      <Logo />
-      <Rank />
-      <ImageLinkForm
-        onInputChange={onInputChange}
-        onButtonSubmit={onButtonSubmit}
-      />
-      <FaceRecognition imageUrl={imageUrl} boxes={boxes} />
+      <Navigation onRouteChange={onRouteChange} userExist={!!user.id} />
+      {route === "home" ? (
+        <div style={{ marginTop: 150 }}>
+          <Logo />
+          <Rank />
+          <ImageLinkForm
+            onInputChange={onInputChange}
+            onButtonSubmit={onButtonSubmit}
+          />
+          <FaceRecognition imageUrl={imageUrl} boxes={boxes} />
+        </div>
+      ) : route === "signin" ? (
+        <Signin loadUser={loadUser} onRouteChange={onRouteChange} />
+      ) : (
+        <Register loadUser={loadUser} onRouteChange={onRouteChange} />
+      )}
     </>
   );
 }

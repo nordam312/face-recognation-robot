@@ -1,55 +1,69 @@
 // ...existing code...
 import React, { useState } from "react";
-import "./signin.css";
-import { validateCredentials, setCurrentUser } from "../../user.js";
+import "../signin/signin.css"; // reuse signin styles for identical look
+import { addUser, setCurrentUser } from "../../user.js";
 
-export default function Signin({ loadUser, onRouteChange }) {
+export default function Register({ loadUser, onRouteChange }) {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const submitSignIn = (e) => {
+  const submitRegister = (e) => {
     e.preventDefault();
     setError("");
 
+    const n = (name || "").trim();
     const em = (email || "").trim().toLowerCase();
     const pw = password || "";
 
-    if (!em || !pw) {
+    if (!n || !em || !pw) {
       setError("Please fill all fields");
       return;
     }
 
-    const result = validateCredentials(em, pw);
+    const result = addUser({ name: n, email: em, password: pw });
     if (result.error) {
       setError(result.error);
       return;
     }
 
-    const user = result.user;
+    const newUser = result.user;
+
+    // persist current-device user and update app state
     try {
-      setCurrentUser(user);
+      setCurrentUser(newUser);
     } catch (err) {
       console.error("failed to set current user", err);
     }
 
-    if (typeof loadUser === "function") loadUser(user);
+    if (typeof loadUser === "function") loadUser(newUser);
     if (typeof onRouteChange === "function") onRouteChange("home");
   };
 
   return (
     <div className="signin-page">
       <div className="signin-card">
-        <h2 className="signin-title">Sign In</h2>
-        <form className="signin-form" onSubmit={submitSignIn}>
+        <h2 className="signin-title">Register</h2>
+        <form className="signin-form" onSubmit={submitRegister}>
+          <label className="signin-label">Name</label>
+          <input
+            className="signin-input"
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            placeholder="Your name"
+          />
+
           <label className="signin-label">Email</label>
           <input
             className="signin-input"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="example@domain.com"
             required
+            placeholder="example@domain.com"
           />
 
           <label className="signin-label">Password</label>
@@ -58,25 +72,25 @@ export default function Signin({ loadUser, onRouteChange }) {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
             required
+            placeholder="••••••••"
           />
 
           {error && <div className="signin-error">{error}</div>}
 
           <button className="signin-button" type="submit">
-            Sign In
+            Register
           </button>
         </form>
 
         <div className="signin-footer">
           <p>
-            Don't have an account?{" "}
+            Already have an account?{" "}
             <span
               className="link"
-              onClick={() => onRouteChange && onRouteChange("register")}
+              onClick={() => onRouteChange && onRouteChange("signin")}
             >
-              Create an account
+              Sign in
             </span>
           </p>
         </div>
