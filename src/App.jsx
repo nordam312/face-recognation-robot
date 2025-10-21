@@ -7,6 +7,8 @@ import MemoParticles from "./MemoParticles.jsx";
 import FaceRecognition from "./components/faceRecognition/FaceRecognition.jsx";
 import Signin from "./components/signin/signin.jsx";
 import Register from "./components/register/register.jsx";
+import axios from "axios";
+import { submitImage } from "./user.js";
 import { useState, useEffect } from "react";
 
 const initialUser = {
@@ -24,6 +26,16 @@ function App() {
   const [route, setRoute] = useState("home"); // start on signin by default
   const [user, setUser] = useState({ ...initialUser });
 
+  const loadUser = (data) => {
+    setUser({
+      id: data.id,
+      name: data.name,
+      email: data.email,
+      entries: data.entries,
+      joined: data.joined,
+    });
+  };
+
   // load user from localStorage on mount (if present) and go to home
   useEffect(() => {
     try {
@@ -39,16 +51,6 @@ function App() {
       console.error("failed to read current user", err);
     }
   }, []);
-
-  // set user in state and persist current user
-  const loadUser = (userData) => {
-    setUser({ ...userData });
-    try {
-      localStorage.setItem("frb_current_user", JSON.stringify(userData));
-    } catch (err) {
-      console.error("failed to save current user", err);
-    }
-  };
 
   const onInputChange = (event) => {
     setInput(event.target.value);
@@ -67,25 +69,36 @@ function App() {
     });
   };
 
-  const onButtonSubmit = () => {
+  const onButtonSubmit = async () => {
     setImageUrl(input);
-    fetch("http://localhost:5000/face-detect", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ imageUrl: input }),
-    })
-      .then((response) => response.json())
-      .then((regions) => {
-        const faceBoxes = calculateFaceLocations(regions);
-        setBoxes(faceBoxes);
-      })
-      .catch((error) => console.log("error", error));
+    const faceBoxes = await axios.post(
+      "http://localhost:5000/face-detect",
+      { imageUrl: input },
+      {
+        headers: { "Content-Type": "application/json", "Myname": "Muahmmed" },
+      }
+    );
+    const regions = faceBoxes.data;
+    const faceLocations = calculateFaceLocations(regions);
+    setBoxes(faceLocations);
+    if (faceBoxes) {
+      try {
+        const entries = await submitImage(user.id);
+        const updatedUser = { ...user, entries: entries };
+        setUser(updatedUser);
+        localStorage.setItem("frb_current_user", JSON.stringify(updatedUser));
+      } catch (err) {
+        console.error("failed to update entries", err);
+      }
+    }
   };
 
   // handle routing and signout: clear user on signout
   const onRouteChange = (newRoute) => {
     if (newRoute === "signout") {
       setUser({ ...initialUser });
+      setImageUrl("");
+      setBoxes([]);
       try {
         localStorage.removeItem("frb_current_user");
       } catch (err) {
@@ -104,7 +117,7 @@ function App() {
       {route === "home" ? (
         <div style={{ marginTop: 150 }}>
           <Logo />
-          <Rank />
+          <Rank data={user} />
           <ImageLinkForm
             onInputChange={onInputChange}
             onButtonSubmit={onButtonSubmit}
@@ -112,9 +125,9 @@ function App() {
           <FaceRecognition imageUrl={imageUrl} boxes={boxes} />
         </div>
       ) : route === "signin" ? (
-        <Signin loadUser={loadUser} onRouteChange={onRouteChange} />
+        <Signin onRouteChange={onRouteChange} loadUser={loadUser} />
       ) : (
-        <Register loadUser={loadUser} onRouteChange={onRouteChange} />
+        <Register onRouteChange={onRouteChange} loadUser={loadUser} />
       )}
     </>
   );

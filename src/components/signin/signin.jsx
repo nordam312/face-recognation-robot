@@ -1,40 +1,35 @@
 // ...existing code...
 import React, { useState } from "react";
+import { signIn } from "../../user";
 import "./signin.css";
-import { validateCredentials, setCurrentUser } from "../../user.js";
 
-export default function Signin({ loadUser, onRouteChange }) {
+export default function Signin({ onRouteChange, loadUser }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const submitSignIn = (e) => {
+  const submitSignIn = async (e) => {
     e.preventDefault();
     setError("");
 
-    const em = (email || "").trim().toLowerCase();
-    const pw = password || "";
-
-    if (!em || !pw) {
+    if (!email || !password) {
       setError("Please fill all fields");
       return;
     }
 
-    const result = validateCredentials(em, pw);
-    if (result.error) {
-      setError(result.error);
-      return;
-    }
-
-    const user = result.user;
     try {
-      setCurrentUser(user);
+      const user = await signIn(email, password); // expects server response { id, name, ... }
+      loadUser(user);
+      // persist current-device user
+      try {
+        localStorage.setItem("frb_current_user", JSON.stringify(user));
+      } catch (err) {
+        console.error(err);
+      }
+      onRouteChange && onRouteChange("home");
     } catch (err) {
-      console.error("failed to set current user", err);
+      setError(err.response.data || "Sign in failed");
     }
-
-    if (typeof loadUser === "function") loadUser(user);
-    if (typeof onRouteChange === "function") onRouteChange("home");
   };
 
   return (

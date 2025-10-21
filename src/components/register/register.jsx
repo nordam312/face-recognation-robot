@@ -1,44 +1,37 @@
 // ...existing code...
 import React, { useState } from "react";
+import { registerUser } from "../../user";
 import "../signin/signin.css"; // reuse signin styles for identical look
-import { addUser, setCurrentUser } from "../../user.js";
 
-export default function Register({ loadUser, onRouteChange }) {
+export default function Register({ onRouteChange, loadUser }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const submitRegister = (e) => {
+  const submitRegister = async (e) => {
     e.preventDefault();
     setError("");
-
-    const n = (name || "").trim();
-    const em = (email || "").trim().toLowerCase();
-    const pw = password || "";
-
-    if (!n || !em || !pw) {
+    if (!name || !email || !password) {
       setError("Please fill all fields");
       return;
     }
-
-    const result = addUser({ name: n, email: em, password: pw });
-    if (result.error) {
-      setError(result.error);
-      return;
-    }
-
-    const newUser = result.user;
-
-    // persist current-device user and update app state
     try {
-      setCurrentUser(newUser);
-    } catch (err) {
-      console.error("failed to set current user", err);
-    }
+      const user = await registerUser(name, email, password);
+      loadUser(user);
+      
+      try {
+        localStorage.setItem("frb_current_user", JSON.stringify(user));
+      } catch (err) {
+        console.error(err);
+      }
 
-    if (typeof loadUser === "function") loadUser(newUser);
-    if (typeof onRouteChange === "function") onRouteChange("home");
+      // persist current-device user)
+      onRouteChange && onRouteChange("home");
+    } catch (error) {
+      setError(error.message || "Registration failed");
+      console.error("Registration failed", error);
+    }
   };
 
   return (

@@ -1,81 +1,78 @@
-const LS_KEY_USERS = "frb_users";
-const LS_KEY_CURRENT = "frb_current_user";
+import axios from "axios";
 
-export const getUsers = () => {
-  try {
-    return JSON.parse(localStorage.getItem(LS_KEY_USERS) || "[]");
-  } catch {
-    return [];
+const BASE = "http://localhost:5000";
+
+async function handleResponse(res) {
+  if (res.status >= 200 && res.status < 300) {
+    return res.data;
+  } else {
+    // حاول استخدام رسالة السيرفر لو موجودة
+    const message = res.data?.message || `Error ${res.status}`;
+    const error = new Error(message);
+    error.response = res; // نحافظ على الـ response لو حاب تستخدمه
+    throw error;
   }
-};
+}
 
-export const saveUsers = (users) => {
-  localStorage.setItem(LS_KEY_USERS, JSON.stringify(users));
-};
-
-export const findUserByEmail = (email) => {
-  if (!email) return null;
-  const users = getUsers();
-  return (
-    users.find((u) => u.email.toLowerCase() === email.toLowerCase()) || null
+export const signIn = async (email, password) => {
+  const res = await axios.post(
+    `${BASE}/signin`,
+    { email, password },
+    {
+      headers: { "Content-Type": "application/json" },
+    }
   );
+  return handleResponse(res);
 };
 
-export const addUser = ({ name, email, password }) => {
-  const users = getUsers();
-  if (findUserByEmail(email)) return { error: "Email already registered" };
-
-  const newUser = {
-    id: Date.now().toString(),
-    name: (name || "").trim(),
-    email: (email || "").trim().toLowerCase(),
-    password: password || "", // NOTE: plain text — for local/test only
-    entries: 0,
-    joined: new Date().toISOString(),
-  };
-
-  users.push(newUser);
-  saveUsers(users);
-  return { user: newUser };
+export const registerUser = async (name, email, password) => {
+  const res = await axios.post(
+    `${BASE}/register`,
+    { name, email, password },
+    {
+      headers: { "Content-Type": "application/json" },
+    }
+  );
+  // const res = await fetch(`${BASE}/register`, {
+  //   method: "POST",
+  //   headers: { "Content-Type": "application/json" },
+  //   body: JSON.stringify({ name, email, password }),
+  // });
+  return handleResponse(res);
 };
 
-export const validateCredentials = (email, password) => {
-  const user = findUserByEmail(email);
-  if (!user) return { error: "User not found" };
-  if (user.password !== password) return { error: "Invalid password" };
-  return { user };
+export const getProfile = async (userId) => {
+  const res = await fetch(`${BASE}/profile/${encodeURIComponent(userId)}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+  return handleResponse(res);
 };
 
-export const incrementEntries = (userId) => {
-  const users = getUsers();
-  const idx = users.findIndex((u) => u.id === userId);
-  if (idx === -1) return null;
-  users[idx].entries = (users[idx].entries || 0) + 1;
-  saveUsers(users);
-  return users[idx];
+/*
+  POST /image
+  - body: { imageUrl }  OR you can adapt to your backend shape (e.g. { id } )
+  - typical server returns updated user or entries count
+*/
+export const submitImage = async (id) => {
+  const res = await axios.put(
+    `${BASE}/image`,
+    { id },
+    {
+      headers: { "Content-Type": "application/json" },
+    }
+  );
+  // const res = await fetch(`${BASE}/image`, {
+  //   method: "POST",
+  //   headers: { "Content-Type": "application/json" },
+  //   body: JSON.stringify({ imageUrl }),
+  // });
+  return handleResponse(res);
 };
 
-/* current-device user (single active session on this browser) */
-export const getCurrentUser = () => {
-  try {
-    return JSON.parse(localStorage.getItem(LS_KEY_CURRENT) || "null");
-  } catch {
-    return null;
-  }
-};
-
-export const setCurrentUser = (user) => {
-  try {
-    localStorage.setItem(LS_KEY_CURRENT, JSON.stringify(user));
-  } catch (err) {
-    console.error("failed to set current user", err);
-  }
-};
-
-export const clearCurrentUser = () => {
-  try {
-    localStorage.removeItem(LS_KEY_CURRENT);
-  } catch (err) {
-    console.error("failed to clear current user", err);
-  }
+export default {
+  signIn,
+  registerUser,
+  getProfile,
+  submitImage,
 };
