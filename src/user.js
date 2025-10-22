@@ -6,10 +6,9 @@ async function handleResponse(res) {
   if (res.status >= 200 && res.status < 300) {
     return res.data;
   } else {
-    // حاول استخدام رسالة السيرفر لو موجودة
     const message = res.data?.message || `Error ${res.status}`;
     const error = new Error(message);
-    error.response = res; // نحافظ على الـ response لو حاب تستخدمه
+    error.response = res; 
     throw error;
   }
 }
