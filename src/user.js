@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE = "http://localhost:5000";
+const BASE = "https://face-recognation-robot-api.onrender.com";
 
 async function handleResponse(res) {
   if (res.status >= 200 && res.status < 300) {
