@@ -19,7 +19,7 @@ const Logo = () => {
           <img
             style={{ paddingTop: "5px", width: "80px", height: "80px" }}
             alt="logo"
-            src="public/logo.png"
+            src="/logo.png"
           />
         </div>
       </Tilt>
