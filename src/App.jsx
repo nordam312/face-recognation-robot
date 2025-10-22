@@ -72,7 +72,7 @@ function App() {
   const onButtonSubmit = async () => {
     setImageUrl(input);
     const faceBoxes = await axios.post(
-      "https://face-recognation-robot-api.onrender.com",
+      "https://face-recognation-robot-api.onrender.com/face-detect",
       { imageUrl: input },
       {
         headers: { "Content-Type": "application/json" },
